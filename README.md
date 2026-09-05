@@ -1,1 +1,2 @@
-# researchassignment
+# Impacts on Women's Psychiatric Disorders
+This project looks into how a woman's geographical location and cultural background control her access to mental healthcare. It examines how geographic factors create barriers to finding care and simultaneously how cultural beliefs and societal expectations on gender influence whether symptoms are identified and whether seeking help is accepted or marginalized

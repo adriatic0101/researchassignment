@@ -1,0 +1,816 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive county-level study of mental-health service use among adult female Medi-Cal beneficiaries in California.">
+  <title>Women's Access to Mental Health Care Across California</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://basemaps.cartocdn.com">
+  <link href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" rel="stylesheet">
+  <style>
+    :root {
+      --ink: #17212b;
+      --muted: #5d6874;
+      --paper: #f7f8f6;
+      --card: #ffffff;
+      --line: #dce2e4;
+      --accent: #145f73;
+      --accent-dark: #0d4150;
+      --soft: #e8f0f1;
+      --missing: #d5d8da;
+      --shadow: 0 12px 30px rgba(25, 43, 52, 0.08);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    a { color: var(--accent-dark); }
+    a:hover { color: var(--accent); }
+
+    .shell {
+      width: min(1180px, calc(100% - 40px));
+      margin: 0 auto;
+    }
+
+    .masthead {
+      color: white;
+      background:
+        radial-gradient(circle at 82% 20%, rgba(112, 177, 185, 0.28), transparent 28rem),
+        linear-gradient(128deg, #0b3440 0%, #145f73 58%, #1a7884 100%);
+      padding: 22px 0 72px;
+    }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: #bfe2e5;
+      font-size: 0.76rem;
+      font-weight: 750;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 68px;
+    }
+
+    .brand { font-family: Georgia, serif; font-size: 1.1rem; }
+    nav ul { display: flex; gap: 22px; margin: 0; padding: 0; list-style: none; }
+    nav a { color: #e9f5f5; font-size: 0.88rem; text-decoration: none; }
+
+    h1, h2, h3 { line-height: 1.13; }
+    h1 {
+      max-width: 850px;
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(2.55rem, 7vw, 5.3rem);
+      font-weight: 500;
+      letter-spacing: -0.045em;
+    }
+
+    .question {
+      max-width: 780px;
+      margin: 30px 0 0;
+      padding-left: 20px;
+      border-left: 3px solid #8ac6cb;
+      color: #e8f4f4;
+      font-size: clamp(1.05rem, 2vw, 1.3rem);
+    }
+
+    main { margin-top: -34px; padding-bottom: 72px; }
+
+    .intro-grid {
+      display: grid;
+      grid-template-columns: 1.7fr 1fr;
+      gap: 32px;
+      padding: 34px;
+      background: var(--card);
+      border: 1px solid rgba(220, 226, 228, 0.9);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-family: Georgia, "Times New Roman", serif;
+      font-size: clamp(1.8rem, 3vw, 2.5rem);
+      font-weight: 500;
+      letter-spacing: -0.025em;
+    }
+
+    h3 { margin: 0 0 8px; font-size: 1.05rem; }
+    p { margin: 0 0 14px; }
+    p:last-child { margin-bottom: 0; }
+
+    .definition {
+      align-self: stretch;
+      padding: 24px;
+      border-radius: 12px;
+      background: var(--soft);
+    }
+
+    .definition .value {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent-dark);
+      font-family: Georgia, serif;
+      font-size: 1.7rem;
+    }
+
+    section { margin-top: 76px; scroll-margin-top: 20px; }
+    .section-heading { max-width: 760px; margin-bottom: 24px; }
+    .section-heading p { color: var(--muted); }
+
+    .control-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 14px 22px;
+      margin-bottom: 14px;
+      padding: 18px 20px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    label { display: grid; gap: 6px; color: var(--muted); font-size: 0.78rem; font-weight: 700; }
+    select {
+      min-width: 150px;
+      padding: 9px 34px 9px 11px;
+      border: 1px solid #bbc5c9;
+      border-radius: 8px;
+      color: var(--ink);
+      background: white;
+      font: inherit;
+    }
+
+    .system-note { flex: 1 1 290px; margin: 0 0 2px; color: var(--muted); font-size: 0.85rem; }
+
+    .map-card {
+      position: relative;
+      overflow: hidden;
+      min-height: 650px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #e8ecec;
+      box-shadow: var(--shadow);
+    }
+
+    #map { position: absolute; inset: 0; }
+
+    .map-overlay {
+      position: absolute;
+      z-index: 3;
+      top: 16px;
+      left: 16px;
+      width: min(280px, calc(100% - 32px));
+      padding: 15px 17px;
+      border: 1px solid rgba(207, 216, 218, 0.9);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.95);
+      box-shadow: 0 8px 22px rgba(26, 39, 44, 0.12);
+      backdrop-filter: blur(8px);
+    }
+
+    .map-overlay .county { margin: 0 0 3px; font-size: 1rem; }
+    .map-overlay .metric { color: var(--accent-dark); font-size: 1.45rem; font-weight: 750; }
+    .map-overlay .detail { color: var(--muted); font-size: 0.78rem; }
+
+    .legend {
+      position: absolute;
+      z-index: 3;
+      right: 16px;
+      bottom: 28px;
+      width: 225px;
+      padding: 14px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: 0 6px 20px rgba(25, 43, 52, 0.13);
+      font-size: 0.75rem;
+    }
+
+    .legend-title { display: block; margin-bottom: 8px; font-size: 0.8rem; }
+    .legend-row { display: flex; align-items: center; gap: 8px; margin-top: 5px; }
+    .swatch { width: 22px; height: 12px; flex: 0 0 auto; border: 1px solid rgba(23, 33, 43, 0.16); }
+    .maplibregl-popup-content { border-radius: 10px; padding: 14px 16px; box-shadow: var(--shadow); }
+    .popup-title { margin: 0 0 6px; font-weight: 800; }
+    .popup-row { margin: 2px 0; color: #38444d; font-size: 0.82rem; }
+
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .chart-card {
+      min-width: 0;
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: 0 7px 22px rgba(25, 43, 52, 0.05);
+    }
+
+    .chart-card.full { grid-column: 1 / -1; }
+    .chart-subtitle { min-height: 42px; color: var(--muted); font-size: 0.84rem; }
+    .chart { width: 100%; overflow-x: auto; }
+    .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+    .chart text { fill: #4c5962; font-family: inherit; font-size: 11px; }
+    .chart .domain, .chart .tick line { stroke: #c9d1d4; }
+    .chart .grid line { stroke: #e7ebec; }
+    .chart .grid path { display: none; }
+
+    .chart-tooltip {
+      position: fixed;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0;
+      max-width: 250px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: white;
+      background: rgba(18, 31, 38, 0.94);
+      font-size: 0.78rem;
+      box-shadow: 0 5px 18px rgba(0, 0, 0, 0.18);
+      transition: opacity 100ms ease;
+    }
+
+    .analysis-grid, .sources-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 24px;
+    }
+
+    .prose-card {
+      padding: 26px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+    }
+
+    .prose-card ul { margin: 8px 0 0; padding-left: 20px; }
+    .prose-card li + li { margin-top: 8px; }
+    .source-meta { margin: 0; display: grid; grid-template-columns: 105px 1fr; gap: 7px 14px; font-size: 0.88rem; }
+    .source-meta dt { color: var(--muted); font-weight: 700; }
+    .source-meta dd { margin: 0; overflow-wrap: anywhere; }
+
+    .status {
+      display: none;
+      margin: 18px 0 0;
+      padding: 12px 15px;
+      border: 1px solid #d7a8a8;
+      border-radius: 9px;
+      color: #712828;
+      background: #fff1f1;
+    }
+
+    footer { padding: 28px 0 42px; color: var(--muted); border-top: 1px solid var(--line); font-size: 0.82rem; }
+
+    @media (max-width: 820px) {
+      .shell { width: min(100% - 24px, 1180px); }
+      nav { margin-bottom: 48px; }
+      nav ul { display: none; }
+      .masthead { padding-bottom: 55px; }
+      .intro-grid, .chart-grid, .analysis-grid, .sources-grid { grid-template-columns: 1fr; }
+      .chart-card.full { grid-column: auto; }
+      .intro-grid { padding: 24px; }
+      section { margin-top: 58px; }
+      .map-card { min-height: 570px; }
+      .legend { right: 10px; bottom: 24px; width: 200px; }
+    }
+
+    @media (max-width: 520px) {
+      .map-overlay { top: 10px; left: 10px; width: calc(100% - 20px); }
+      .map-card { min-height: 620px; }
+      .chart-card { padding: 18px 14px; }
+      .source-meta { grid-template-columns: 1fr; gap: 2px; }
+      .source-meta dd { margin-bottom: 8px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="masthead">
+    <div class="shell">
+      <nav aria-label="Main navigation">
+        <div class="brand">California Mental Health Atlas</div>
+        <ul>
+          <li><a href="#map-section">Map</a></li>
+          <li><a href="#charts-section">Charts</a></li>
+          <li><a href="#analysis-section">Analysis</a></li>
+          <li><a href="#sources-section">Sources</a></li>
+        </ul>
+      </nav>
+      <p class="eyebrow">County-level research dashboard</p>
+      <h1>Women's Access to Mental Health Care Across California</h1>
+      <p class="question"><strong>Research question:</strong> “How does access to mental health diagnosis and treatment vary among women in different counties in California?”</p>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section class="intro-grid" aria-labelledby="intro-title">
+      <div>
+        <p class="eyebrow" style="color: var(--accent)">Introduction</p>
+        <h2 id="intro-title">Measuring realized service use</h2>
+        <p>This dashboard studies county-level variation in mental-health service use among <strong>adult female Medi-Cal beneficiaries</strong> in California. The geographic unit is the county, and all 58 counties are represented in the source data.</p>
+        <p>The data describe treatment use rather than the entire pathway from symptoms to diagnosis. They therefore provide a practical proxy for access, while remaining narrower than the full population of women in California.</p>
+      </div>
+      <aside class="definition" aria-label="Primary measure definition">
+        <span class="value">Service penetration rate</span>
+        <p>Eligible adult female Medi-Cal beneficiaries who received at least one mental-health service during the fiscal year, divided by all eligible adult female beneficiaries in the selected delivery system.</p>
+        <p><strong>Unit:</strong> percent (%)</p>
+      </aside>
+    </section>
+
+    <div id="status" class="status" role="alert"></div>
+
+    <section id="map-section" aria-labelledby="map-title">
+      <div class="section-heading">
+        <p class="eyebrow" style="color: var(--accent)">Interactive map</p>
+        <h2 id="map-title">County patterns in treatment use</h2>
+        <p>Choose a fiscal year and delivery system. Hover over or select a county for its reported rate and underlying counts.</p>
+      </div>
+      <div class="control-bar">
+        <label for="year-select">Fiscal year
+          <select id="year-select" aria-label="Select fiscal year"></select>
+        </label>
+        <label for="system-select">Delivery system
+          <select id="system-select" aria-label="Select delivery system">
+            <option value="NSMHS">NSMHS</option>
+            <option value="SMHS">SMHS</option>
+          </select>
+        </label>
+        <p id="system-note" class="system-note"></p>
+      </div>
+      <div class="map-card">
+        <div id="map" role="application" aria-label="Interactive choropleth map of California counties"></div>
+        <aside id="map-readout" class="map-overlay" aria-live="polite">
+          <p class="county">Explore a county</p>
+          <div class="metric">Hover or click</div>
+          <div class="detail">The selected rate and counts will appear here.</div>
+        </aside>
+        <aside id="legend" class="legend" aria-label="Map legend"></aside>
+      </div>
+    </section>
+
+    <section id="charts-section" aria-labelledby="charts-title">
+      <div class="section-heading">
+        <p class="eyebrow" style="color: var(--accent)">Comparative views</p>
+        <h2 id="charts-title">Where counties differ—and how the measure changes</h2>
+        <p>All charts are calculated from the same verified county records. Suppressed values are excluded from quantitative comparisons.</p>
+      </div>
+      <div class="chart-grid">
+        <article class="chart-card full">
+          <h3>County ranking</h3>
+          <p id="rank-subtitle" class="chart-subtitle"></p>
+          <div id="rank-chart" class="chart" aria-label="Ranked bar chart of counties"></div>
+        </article>
+        <article class="chart-card">
+          <h3>Four-year trend</h3>
+          <p class="chart-subtitle">Weighted rate across counties with reported values. Each delivery system is calculated separately.</p>
+          <div id="trend-chart" class="chart" aria-label="Line chart of rates by fiscal year"></div>
+        </article>
+        <article class="chart-card">
+          <h3>Eligible population and service use</h3>
+          <p id="scatter-subtitle" class="chart-subtitle"></p>
+          <div id="scatter-chart" class="chart" aria-label="Scatterplot of eligible population and service penetration"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="analysis-section" aria-labelledby="analysis-title">
+      <div class="section-heading">
+        <p class="eyebrow" style="color: var(--accent)">Analysis</p>
+        <h2 id="analysis-title">What the selected data show</h2>
+      </div>
+      <div class="analysis-grid">
+        <article class="prose-card">
+          <h3>County variation</h3>
+          <div id="dynamic-analysis"><p>Analysis will appear after the data load.</p></div>
+        </article>
+        <article class="prose-card">
+          <h3>How to interpret the pattern</h3>
+          <p>The map shows geographic variation, but it does not by itself establish statistically significant spatial clusters. Similar shading among neighboring counties may suggest a geographic pattern worth investigating.</p>
+          <p>The scatterplot describes an association between the size of the eligible population and the observed rate. It does not show that county population size—or location—causes differences in treatment use.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="limitations-section" aria-labelledby="limitations-title">
+      <div class="section-heading">
+        <p class="eyebrow" style="color: var(--accent)">Limitations</p>
+        <h2 id="limitations-title">Boundaries of the evidence</h2>
+      </div>
+      <article class="prose-card">
+        <ul>
+          <li>The population is adult women enrolled in Medi-Cal, not all women living in each county. “Female” reflects the administrative sex category available in the source.</li>
+          <li>The rate measures realized service use and is only a proxy for access. It does not directly measure appointment availability, wait times, affordability, unmet need, or whether people who needed care received it.</li>
+          <li>The data identify receipt of at least one mental-health service, but do not separately establish when a diagnosis occurred or distinguish diagnosis access from treatment access.</li>
+          <li>Alpine County's rate is suppressed or unavailable in both systems in every included year. Sierra County's SMHS rate is unavailable in 2019/20 and 2020/21. Missing values are displayed separately and are never treated as zero.</li>
+          <li>NSMHS and SMHS are separate delivery systems whose beneficiary populations can overlap. Their counts should not be added.</li>
+          <li>Claims and encounter records can miss care that was not billed or reported. Changes in eligibility, coding, reporting, or delivery systems can affect comparisons across fiscal years.</li>
+          <li>This descriptive dashboard shows variation and association. It cannot establish that geography or county characteristics caused the observed differences.</li>
+        </ul>
+      </article>
+    </section>
+
+    <section id="sources-section" aria-labelledby="sources-title">
+      <div class="section-heading">
+        <p class="eyebrow" style="color: var(--accent)">Data sources</p>
+        <h2 id="sources-title">Documented, county-level inputs</h2>
+      </div>
+      <div class="sources-grid">
+        <article class="prose-card">
+          <h3>Behavioral Health Program Performance Data</h3>
+          <dl class="source-meta">
+            <dt>Organization</dt><dd>California Department of Health Care Services (DHCS)</dd>
+            <dt>Years</dt><dd>State fiscal years 2019/20–2022/23</dd>
+            <dt>Variable</dt><dd><code>100 × MHS1_CT / TOTAL_CT</code>, adult female rows</dd>
+            <dt>Geography</dt><dd>California counties</dd>
+            <dt>Source</dt><dd><a href="https://catalog.data.gov/dataset/behavioral-health-program-performance-data" target="_blank" rel="noopener">Dataset catalog</a> · <a href="https://data.chhs.ca.gov/dataset/380ed3e6-3cef-4aa1-813e-ddad3dd6bb98/resource/aeb088b1-3904-47c3-b5c4-de564ff1426c/download/all_demo_data_new_3.csv" target="_blank" rel="noopener">Demographic CSV</a></dd>
+          </dl>
+        </article>
+        <article class="prose-card">
+          <h3>States and Counties</h3>
+          <dl class="source-meta">
+            <dt>Organization</dt><dd>U.S. Census Bureau, TIGERweb</dd>
+            <dt>Accessed</dt><dd>September 4, 2026</dd>
+            <dt>Layer</dt><dd>Counties, filtered to state FIPS 06</dd>
+            <dt>Geography</dt><dd>58 California county polygons</dd>
+            <dt>Join field</dt><dd>Five-character county FIPS (<code>county_fips</code> ↔ <code>GEOID</code>)</dd>
+            <dt>Source</dt><dd><a href="https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/State_County/MapServer" target="_blank" rel="noopener">TIGERweb service</a></dd>
+          </dl>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div id="chart-tooltip" class="chart-tooltip" role="tooltip"></div>
+
+  <footer>
+    <div class="shell">Prepared as a descriptive research dashboard. Rates are calculated only when DHCS reports both numerator and denominator.</div>
+  </footer>
+
+  <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+  <script>
+    const HEALTH_PATH = "data/mental-health-data.csv";
+    const GEO_PATH = "data/california-counties.geojson";
+    const COLORS = ["#e5f1f2", "#b9d9dc", "#7db8c0", "#3d8c9a", "#145f73"];
+    const MISSING_COLOR = "#d5d8da";
+    const SYSTEM_LABELS = {
+      NSMHS: "Non-specialty mental-health services",
+      SMHS: "Specialty mental-health services"
+    };
+
+    const state = { rows: [], geojson: null, map: null, mapReady: false, popup: null };
+    const number = d3.format(",");
+    const percent = d3.format(".2f");
+    const tooltip = d3.select("#chart-tooltip");
+
+    function parseRow(d) {
+      const value = d.mental_health_service_penetration_percent === "" ? null : +d.mental_health_service_penetration_percent;
+      return {
+        ...d,
+        value,
+        eligible: d.eligible_adult_female_medi_cal_beneficiaries === "" ? null : +d.eligible_adult_female_medi_cal_beneficiaries,
+        served: d.adult_female_beneficiaries_with_1plus_mental_health_service === "" ? null : +d.adult_female_beneficiaries_with_1plus_mental_health_service
+      };
+    }
+
+    function currentSelection() {
+      return {
+        year: document.querySelector("#year-select").value,
+        system: document.querySelector("#system-select").value
+      };
+    }
+
+    function selectedRows() {
+      const { year, system } = currentSelection();
+      return state.rows.filter(d => d.fiscal_year === year && d.delivery_system === system);
+    }
+
+    function thresholdsFor(rows) {
+      const values = rows.filter(d => d.value !== null).map(d => d.value).sort(d3.ascending);
+      return [0.2, 0.4, 0.6, 0.8].map(q => d3.quantileSorted(values, q));
+    }
+
+    function mapExpression(thresholds) {
+      return ["case",
+        ["!", ["has", "access_value"]], MISSING_COLOR,
+        ["step", ["get", "access_value"], COLORS[0],
+          thresholds[0], COLORS[1], thresholds[1], COLORS[2], thresholds[2], COLORS[3], thresholds[3], COLORS[4]
+        ]
+      ];
+    }
+
+    function updateGeoData(rows) {
+      const byFips = new Map(rows.map(d => [d.county_fips, d]));
+      state.geojson.features.forEach(feature => {
+        const row = byFips.get(feature.properties.GEOID);
+        delete feature.properties.access_value;
+        feature.properties.year = row?.fiscal_year || "";
+        feature.properties.system = row?.delivery_system || "";
+        feature.properties.eligible = row?.eligible ?? null;
+        feature.properties.served = row?.served ?? null;
+        feature.properties.value_status = row?.value_status || "unavailable";
+        if (row?.value !== null && row?.value !== undefined) feature.properties.access_value = row.value;
+      });
+    }
+
+    function updateLegend(rows, thresholds) {
+      const { year, system } = currentSelection();
+      const values = rows.filter(d => d.value !== null).map(d => d.value);
+      const bounds = [d3.min(values), ...thresholds, d3.max(values)];
+      const labels = COLORS.map((color, i) => {
+        const lower = i === 0 ? bounds[0] : bounds[i];
+        const upper = bounds[i + 1];
+        return `<div class="legend-row"><span class="swatch" style="background:${color}"></span><span>${percent(lower)}–${percent(upper)}%</span></div>`;
+      }).join("");
+      document.querySelector("#legend").innerHTML = `
+        <strong class="legend-title">At least one service (%)</strong>
+        <div>${year} · ${system}</div>
+        ${labels}
+        <div class="legend-row"><span class="swatch" style="background:${MISSING_COLOR}"></span><span>Suppressed / unavailable</span></div>`;
+    }
+
+    function readoutHTML(properties) {
+      const value = properties.access_value;
+      const metric = value === undefined || value === null ? "Not reported" : `${percent(+value)}%`;
+      const counts = value === undefined || value === null
+        ? "The source value is suppressed or unavailable; it is not zero."
+        : `${number(+properties.served)} received ≥1 service · ${number(+properties.eligible)} eligible`;
+      return `<p class="county">${properties.NAME}</p><div class="metric">${metric}</div><div class="detail">${properties.year} · ${properties.system}<br>${counts}</div>`;
+    }
+
+    function initializeMap(rows) {
+      updateGeoData(rows);
+      const thresholds = thresholdsFor(rows);
+      state.map = new maplibregl.Map({
+        container: "map",
+        style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+        center: [-119.5, 37.2],
+        zoom: 4.8,
+        attributionControl: true
+      });
+      state.map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
+
+      state.map.on("load", () => {
+        state.mapReady = true;
+        state.map.addSource("counties", { type: "geojson", data: state.geojson });
+        state.map.addLayer({
+          id: "county-fill",
+          type: "fill",
+          source: "counties",
+          paint: { "fill-color": mapExpression(thresholds), "fill-opacity": 0.82 }
+        });
+        state.map.addLayer({
+          id: "county-lines",
+          type: "line",
+          source: "counties",
+          paint: { "line-color": "#ffffff", "line-width": 0.75, "line-opacity": 0.9 }
+        });
+        state.map.addLayer({
+          id: "county-highlight",
+          type: "line",
+          source: "counties",
+          filter: ["==", ["get", "GEOID"], ""],
+          paint: { "line-color": "#0a303b", "line-width": 2.5 }
+        });
+
+        state.map.fitBounds([[-124.7, 32.35], [-113.9, 42.15]], { padding: 34, duration: 0 });
+
+        state.map.on("mousemove", "county-fill", event => {
+          const feature = event.features[0];
+          state.map.getCanvas().style.cursor = "pointer";
+          state.map.setFilter("county-highlight", ["==", ["get", "GEOID"], feature.properties.GEOID]);
+          document.querySelector("#map-readout").innerHTML = readoutHTML(feature.properties);
+        });
+
+        state.map.on("mouseleave", "county-fill", () => {
+          state.map.getCanvas().style.cursor = "";
+          state.map.setFilter("county-highlight", ["==", ["get", "GEOID"], ""]);
+        });
+
+        state.map.on("click", "county-fill", event => {
+          const feature = event.features[0];
+          if (state.popup) state.popup.remove();
+          state.popup = new maplibregl.Popup({ closeButton: true, maxWidth: "310px" })
+            .setLngLat(event.lngLat)
+            .setHTML(`<div class="popup-title">${feature.properties.NAME}</div>${readoutHTML(feature.properties).replace(/<p class="county">.*?<\/p>/, "")}`)
+            .addTo(state.map);
+        });
+      });
+
+      state.map.on("error", event => {
+        console.error("MapLibre error:", event.error || event);
+      });
+    }
+
+    function updateMap(rows) {
+      const thresholds = thresholdsFor(rows);
+      updateGeoData(rows);
+      updateLegend(rows, thresholds);
+      if (state.mapReady) {
+        state.map.getSource("counties").setData(state.geojson);
+        state.map.setPaintProperty("county-fill", "fill-color", mapExpression(thresholds));
+      }
+    }
+
+    function clearChart(selector) {
+      d3.select(selector).selectAll("*").remove();
+    }
+
+    function showTooltip(event, html) {
+      tooltip.html(html)
+        .style("left", `${Math.min(event.clientX + 14, window.innerWidth - 265)}px`)
+        .style("top", `${event.clientY + 14}px`)
+        .style("opacity", 1);
+    }
+
+    function hideTooltip() { tooltip.style("opacity", 0); }
+
+    function renderRanking(rows) {
+      const data = rows.filter(d => d.value !== null).sort((a, b) => d3.descending(a.value, b.value));
+      const missing = rows.filter(d => d.value === null);
+      const { year, system } = currentSelection();
+      document.querySelector("#rank-subtitle").textContent = `${data.length} reported counties, highest to lowest · ${year} ${system}${missing.length ? ` · ${missing.length} unavailable` : ""}`;
+      clearChart("#rank-chart");
+
+      const width = 1080;
+      const rowHeight = 20;
+      const margin = { top: 14, right: 52, bottom: 38, left: 125 };
+      const height = margin.top + margin.bottom + data.length * rowHeight;
+      const svg = d3.select("#rank-chart").append("svg").attr("viewBox", `0 0 ${width} ${height}`);
+      const x = d3.scaleLinear().domain([0, d3.max(data, d => d.value) * 1.06]).range([margin.left, width - margin.right]);
+      const y = d3.scaleBand().domain(data.map(d => d.county_name)).range([margin.top, height - margin.bottom]).padding(0.2);
+
+      svg.append("g").attr("class", "grid").attr("transform", `translate(0,${height - margin.bottom})`)
+        .call(d3.axisBottom(x).ticks(7).tickSize(-(height - margin.top - margin.bottom)).tickFormat(""));
+      svg.append("g").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x).ticks(7).tickFormat(d => `${d}%`));
+      svg.append("g").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).tickSize(0)).call(g => g.select(".domain").remove());
+
+      svg.selectAll("rect.bar").data(data).join("rect")
+        .attr("class", "bar").attr("x", margin.left).attr("y", d => y(d.county_name))
+        .attr("width", d => x(d.value) - margin.left).attr("height", y.bandwidth())
+        .attr("rx", 2).attr("fill", "#367f8e")
+        .on("mousemove", (event, d) => showTooltip(event, `<strong>${d.county_name}</strong><br>${percent(d.value)}% received ≥1 service<br>${number(d.served)} of ${number(d.eligible)} eligible`))
+        .on("mouseleave", hideTooltip);
+
+      svg.selectAll("text.value").data(data).join("text").attr("class", "value")
+        .attr("x", d => x(d.value) + 5).attr("y", d => y(d.county_name) + y.bandwidth() / 2)
+        .attr("dominant-baseline", "middle").text(d => percent(d.value));
+    }
+
+    function renderTrend() {
+      const years = Array.from(new Set(state.rows.map(d => d.fiscal_year))).sort();
+      const systems = ["NSMHS", "SMHS"];
+      const data = systems.flatMap(system => years.map(year => {
+        const rows = state.rows.filter(d => d.delivery_system === system && d.fiscal_year === year && d.value !== null);
+        return { system, year, value: 100 * d3.sum(rows, d => d.served) / d3.sum(rows, d => d.eligible), counties: rows.length };
+      }));
+
+      clearChart("#trend-chart");
+      const width = 540, height = 340;
+      const margin = { top: 24, right: 25, bottom: 55, left: 58 };
+      const svg = d3.select("#trend-chart").append("svg").attr("viewBox", `0 0 ${width} ${height}`);
+      const x = d3.scalePoint().domain(years).range([margin.left, width - margin.right]).padding(0.35);
+      const y = d3.scaleLinear().domain([0, d3.max(data, d => d.value) * 1.18]).nice().range([height - margin.bottom, margin.top]);
+      const color = d3.scaleOrdinal().domain(systems).range(["#176b7c", "#b36b3d"]);
+
+      svg.append("g").attr("class", "grid").attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y).ticks(6).tickSize(-(width - margin.left - margin.right)).tickFormat(""));
+      svg.append("g").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x));
+      svg.append("g").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(6).tickFormat(d => `${d}%`));
+
+      const line = d3.line().x(d => x(d.year)).y(d => y(d.value));
+      systems.forEach(system => {
+        const series = data.filter(d => d.system === system);
+        svg.append("path").datum(series).attr("fill", "none").attr("stroke", color(system)).attr("stroke-width", 2.5).attr("d", line);
+        svg.selectAll(`circle.${system}`).data(series).join("circle").attr("class", system)
+          .attr("cx", d => x(d.year)).attr("cy", d => y(d.value)).attr("r", 5)
+          .attr("fill", color(system)).attr("stroke", "white").attr("stroke-width", 1.5)
+          .on("mousemove", (event, d) => showTooltip(event, `<strong>${SYSTEM_LABELS[d.system]}</strong><br>${d.year}: ${percent(d.value)}%<br>${d.counties} counties reported`))
+          .on("mouseleave", hideTooltip);
+      });
+
+      const legend = svg.append("g").attr("transform", `translate(${margin.left},${height - 15})`);
+      systems.forEach((system, i) => {
+        const group = legend.append("g").attr("transform", `translate(${i * 150},0)`);
+        group.append("circle").attr("r", 5).attr("fill", color(system));
+        group.append("text").attr("x", 10).attr("dominant-baseline", "middle").text(system);
+      });
+    }
+
+    function renderScatter(rows) {
+      const data = rows.filter(d => d.value !== null && d.eligible > 0);
+      const { year, system } = currentSelection();
+      document.querySelector("#scatter-subtitle").textContent = `Eligible adult female Medi-Cal population (log scale) versus service penetration · ${year} ${system}.`;
+      clearChart("#scatter-chart");
+      const width = 540, height = 340;
+      const margin = { top: 18, right: 24, bottom: 58, left: 62 };
+      const svg = d3.select("#scatter-chart").append("svg").attr("viewBox", `0 0 ${width} ${height}`);
+      const x = d3.scaleLog().domain(d3.extent(data, d => d.eligible)).nice().range([margin.left, width - margin.right]);
+      const y = d3.scaleLinear().domain(d3.extent(data, d => d.value)).nice().range([height - margin.bottom, margin.top]);
+
+      svg.append("g").attr("class", "grid").attr("transform", `translate(${margin.left},0)`)
+        .call(d3.axisLeft(y).ticks(6).tickSize(-(width - margin.left - margin.right)).tickFormat(""));
+      svg.append("g").attr("transform", `translate(0,${height - margin.bottom})`).call(d3.axisBottom(x).ticks(5, "~s"));
+      svg.append("g").attr("transform", `translate(${margin.left},0)`).call(d3.axisLeft(y).ticks(6).tickFormat(d => `${d}%`));
+      svg.append("text").attr("x", (margin.left + width - margin.right) / 2).attr("y", height - 15).attr("text-anchor", "middle").text("Eligible adult female beneficiaries (log scale)");
+      svg.append("text").attr("transform", "rotate(-90)").attr("x", -(margin.top + height - margin.bottom) / 2).attr("y", 15).attr("text-anchor", "middle").text("Received ≥1 service (%)");
+
+      svg.selectAll("circle.county").data(data).join("circle").attr("class", "county")
+        .attr("cx", d => x(d.eligible)).attr("cy", d => y(d.value)).attr("r", 5)
+        .attr("fill", "#2f8290").attr("fill-opacity", 0.72).attr("stroke", "white").attr("stroke-width", 0.8)
+        .on("mousemove", (event, d) => showTooltip(event, `<strong>${d.county_name}</strong><br>${percent(d.value)}% received ≥1 service<br>${number(d.eligible)} eligible beneficiaries`))
+        .on("mouseleave", hideTooltip);
+    }
+
+    function renderAnalysis(rows) {
+      const available = rows.filter(d => d.value !== null).sort((a, b) => d3.descending(a.value, b.value));
+      const missing = rows.filter(d => d.value === null);
+      const { year, system } = currentSelection();
+      const high = available.slice(0, 3);
+      const low = available.slice(-3).reverse();
+      const range = d3.max(available, d => d.value) - d3.min(available, d => d.value);
+      const names = list => list.map(d => `${d.county_name.replace(" County", "")} (${percent(d.value)}%)`).join(", ");
+
+      document.querySelector("#dynamic-analysis").innerHTML = `
+        <p>For ${year} ${system}, reported county rates span <strong>${percent(range)} percentage points</strong>, from ${percent(d3.min(available, d => d.value))}% to ${percent(d3.max(available, d => d.value))}%. This indicates meaningful descriptive variation across counties.</p>
+        <p>The three highest reported values are ${names(high)}. The three lowest are ${names(low)}. These are observed rates, not performance grades, and differences may reflect need, enrollment, service systems, reporting, or other unmeasured factors.</p>
+        <p>${missing.length ? `${missing.map(d => d.county_name).join(", ")} ${missing.length === 1 ? "has" : "have"} no reportable rate in this selection and ${missing.length === 1 ? "is" : "are"} excluded from the ranking.` : "All counties have a reportable rate in this selection."}</p>`;
+    }
+
+    function updateDashboard() {
+      const rows = selectedRows();
+      const { year, system } = currentSelection();
+      document.querySelector("#system-note").textContent = `${SYSTEM_LABELS[system]}. Rates for the two systems are not combined.`;
+      document.querySelector("#map-readout").innerHTML = `<p class="county">${year} · ${system}</p><div class="metric">Explore a county</div><div class="detail">Hover or click for the rate and underlying counts.</div>`;
+      if (state.popup) { state.popup.remove(); state.popup = null; }
+      updateMap(rows);
+      renderRanking(rows);
+      renderScatter(rows);
+      renderAnalysis(rows);
+    }
+
+    async function initialize() {
+      try {
+        const [rows, geojson] = await Promise.all([d3.csv(HEALTH_PATH, parseRow), d3.json(GEO_PATH)]);
+        if (geojson.features.length !== 58) throw new Error(`Expected 58 county features; found ${geojson.features.length}.`);
+        const geoFips = new Set(geojson.features.map(d => d.properties.GEOID));
+        const healthFips = new Set(rows.map(d => d.county_fips));
+        const unmatched = [...healthFips].filter(fips => !geoFips.has(fips));
+        if (unmatched.length) throw new Error(`Unmatched county FIPS: ${unmatched.join(", ")}`);
+
+        state.rows = rows;
+        state.geojson = geojson;
+        const years = Array.from(new Set(rows.map(d => d.fiscal_year))).sort();
+        d3.select("#year-select").selectAll("option").data(years).join("option").attr("value", d => d).text(d => d);
+        document.querySelector("#year-select").value = years.at(-1);
+        document.querySelector("#system-select").value = "NSMHS";
+        document.querySelector("#year-select").addEventListener("change", updateDashboard);
+        document.querySelector("#system-select").addEventListener("change", updateDashboard);
+
+        const initialRows = selectedRows();
+        updateLegend(initialRows, thresholdsFor(initialRows));
+        initializeMap(initialRows);
+        renderRanking(initialRows);
+        renderTrend();
+        renderScatter(initialRows);
+        renderAnalysis(initialRows);
+        document.querySelector("#system-note").textContent = `${SYSTEM_LABELS.NSMHS}. Rates for the two systems are not combined.`;
+      } catch (error) {
+        console.error(error);
+        const status = document.querySelector("#status");
+        status.style.display = "block";
+        status.textContent = `The dashboard could not load its verified data: ${error.message} Use a local web server such as VS Code Live Server rather than opening index.html directly.`;
+      }
+    }
+
+    let resizeTimer;
+    window.addEventListener("resize", () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        if (state.rows.length) {
+          const rows = selectedRows();
+          renderRanking(rows);
+          renderTrend();
+          renderScatter(rows);
+          if (state.map) state.map.resize();
+        }
+      }, 180);
+    });
+
+    initialize();
+  </script>
+</body>
+</html>

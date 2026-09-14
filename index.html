@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="An interactive county-level study of mental-health service use among adult female Medi-Cal beneficiaries in California.">
+  <meta name="description" content="An interactive county-level study of realized access to mental-health care among adult female Medi-Cal beneficiaries in California.">
   <title>Women's Access to Mental Health Care Across California</title>
   <link rel="preconnect" href="https://unpkg.com">
   <link rel="preconnect" href="https://basemaps.cartocdn.com">
@@ -223,6 +223,18 @@
     .chart-card.full { grid-column: 1 / -1; }
     .chart-subtitle { min-height: 42px; color: var(--muted); font-size: 0.84rem; }
     .chart { width: 100%; overflow-x: auto; }
+    .ranking-scroll {
+      max-height: 440px;
+      overflow: auto;
+      padding-right: 8px;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      scrollbar-gutter: stable;
+    }
+    .ranking-scroll:focus-visible {
+      outline: 3px solid rgba(20, 95, 115, 0.35);
+      outline-offset: 3px;
+    }
     .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
     .chart text { fill: #4c5962; font-family: inherit; font-size: 11px; }
     .chart .domain, .chart .tick line { stroke: #c9d1d4; }
@@ -319,12 +331,12 @@
     <section class="intro-grid" aria-labelledby="intro-title">
       <div>
         <p class="eyebrow" style="color: var(--accent)">Introduction</p>
-        <h2 id="intro-title">Measuring realized service use</h2>
-        <p>This dashboard studies county-level variation in mental-health service use among <strong>adult female Medi-Cal beneficiaries</strong> in California. The geographic unit is the county, and all 58 counties are represented in the source data.</p>
-        <p>The data describe treatment use rather than the entire pathway from symptoms to diagnosis. They therefore provide a practical proxy for access, while remaining narrower than the full population of women in California.</p>
+        <h2 id="intro-title">Using service receipt to examine access</h2>
+        <p>This dashboard examines how realized access to mental-health care varies by county among <strong>adult female Medi-Cal beneficiaries</strong> in California. The geographic unit is the county, and all 58 counties are represented in the source data.</p>
+        <p>Access is represented by whether an eligible beneficiary received at least one mental-health service during the year. This captures care that people reached, but not unmet need or every step between seeking care, diagnosis, and treatment.</p>
       </div>
       <aside class="definition" aria-label="Primary measure definition">
-        <span class="value">Service penetration rate</span>
+        <span class="value">Realized access proxy</span>
         <p>Eligible adult female Medi-Cal beneficiaries who received at least one mental-health service during the fiscal year, divided by all eligible adult female beneficiaries in the selected delivery system.</p>
         <p><strong>Unit:</strong> percent (%)</p>
       </aside>
@@ -335,8 +347,8 @@
     <section id="map-section" aria-labelledby="map-title">
       <div class="section-heading">
         <p class="eyebrow" style="color: var(--accent)">Interactive map</p>
-        <h2 id="map-title">County patterns in treatment use</h2>
-        <p>Choose a fiscal year and delivery system. Hover over or select a county for its reported rate and underlying counts.</p>
+        <h2 id="map-title">County patterns in realized access</h2>
+        <p>Choose a fiscal year and delivery system to compare the share of eligible women who accessed at least one reported mental-health service. Hover over or select a county for its rate and underlying counts.</p>
       </div>
       <div class="control-bar">
         <label for="year-select">Fiscal year
@@ -364,22 +376,22 @@
     <section id="charts-section" aria-labelledby="charts-title">
       <div class="section-heading">
         <p class="eyebrow" style="color: var(--accent)">Comparative views</p>
-        <h2 id="charts-title">Where counties differ—and how the measure changes</h2>
-        <p>All charts are calculated from the same verified county records. Suppressed values are excluded from quantitative comparisons.</p>
+        <h2 id="charts-title">How realized access differs across counties and years</h2>
+        <p>All charts use the same access proxy: the share of eligible adult female Medi-Cal beneficiaries who received at least one service. Suppressed values are excluded from quantitative comparisons.</p>
       </div>
       <div class="chart-grid">
         <article class="chart-card full">
           <h3>County ranking</h3>
           <p id="rank-subtitle" class="chart-subtitle"></p>
-          <div id="rank-chart" class="chart" aria-label="Ranked bar chart of counties"></div>
+          <div id="rank-chart" class="chart ranking-scroll" tabindex="0" role="region" aria-label="Scrollable ranked bar chart of counties"></div>
         </article>
         <article class="chart-card">
           <h3>Four-year trend</h3>
-          <p class="chart-subtitle">Weighted rate across counties with reported values. Each delivery system is calculated separately.</p>
+          <p class="chart-subtitle">Weighted realized-access rate across counties with reported values. Each delivery system is calculated separately.</p>
           <div id="trend-chart" class="chart" aria-label="Line chart of rates by fiscal year"></div>
         </article>
         <article class="chart-card">
-          <h3>Eligible population and service use</h3>
+          <h3>Eligible population and realized access</h3>
           <p id="scatter-subtitle" class="chart-subtitle"></p>
           <div id="scatter-chart" class="chart" aria-label="Scatterplot of eligible population and service penetration"></div>
         </article>
@@ -397,9 +409,9 @@
           <div id="dynamic-analysis"><p>Analysis will appear after the data load.</p></div>
         </article>
         <article class="prose-card">
-          <h3>How to interpret the pattern</h3>
-          <p>The map shows geographic variation, but it does not by itself establish statistically significant spatial clusters. Similar shading among neighboring counties may suggest a geographic pattern worth investigating.</p>
-          <p>The scatterplot describes an association between the size of the eligible population and the observed rate. It does not show that county population size—or location—causes differences in treatment use.</p>
+          <h3>What this says about access</h3>
+          <p>Higher rates mean a larger share of eligible women reached at least one reported service; lower rates point to less realized access. The data cannot show whether differences arise from need, affordability, provider capacity, awareness, referral pathways, or other barriers.</p>
+          <p>The map shows geographic variation, but not statistically significant spatial clusters. The scatterplot tests whether the observed access proxy varies with the size of the eligible population; neither view establishes that population size or location causes the differences.</p>
         </article>
       </div>
     </section>
@@ -642,7 +654,7 @@
       const data = rows.filter(d => d.value !== null).sort((a, b) => d3.descending(a.value, b.value));
       const missing = rows.filter(d => d.value === null);
       const { year, system } = currentSelection();
-      document.querySelector("#rank-subtitle").textContent = `${data.length} reported counties, highest to lowest · ${year} ${system}${missing.length ? ` · ${missing.length} unavailable` : ""}`;
+      document.querySelector("#rank-subtitle").textContent = `Realized-access proxy for ${data.length} counties, highest to lowest · ${year} ${system}${missing.length ? ` · ${missing.length} without a reportable rate` : ""}. Scroll to view all counties.`;
       clearChart("#rank-chart");
 
       const width = 1080;
@@ -713,7 +725,7 @@
     function renderScatter(rows) {
       const data = rows.filter(d => d.value !== null && d.eligible > 0);
       const { year, system } = currentSelection();
-      document.querySelector("#scatter-subtitle").textContent = `Eligible adult female Medi-Cal population (log scale) versus service penetration · ${year} ${system}.`;
+      document.querySelector("#scatter-subtitle").textContent = `Eligible adult female Medi-Cal population (log scale) versus realized-access proxy · ${year} ${system}.`;
       clearChart("#scatter-chart");
       const width = 540, height = 340;
       const margin = { top: 18, right: 24, bottom: 58, left: 62 };
@@ -745,9 +757,9 @@
       const names = list => list.map(d => `${d.county_name.replace(" County", "")} (${percent(d.value)}%)`).join(", ");
 
       document.querySelector("#dynamic-analysis").innerHTML = `
-        <p>For ${year} ${system}, reported county rates span <strong>${percent(range)} percentage points</strong>, from ${percent(d3.min(available, d => d.value))}% to ${percent(d3.max(available, d => d.value))}%. This indicates meaningful descriptive variation across counties.</p>
-        <p>The three highest reported values are ${names(high)}. The three lowest are ${names(low)}. These are observed rates, not performance grades, and differences may reflect need, enrollment, service systems, reporting, or other unmeasured factors.</p>
-        <p>${missing.length ? `${missing.map(d => d.county_name).join(", ")} ${missing.length === 1 ? "has" : "have"} no reportable rate in this selection and ${missing.length === 1 ? "is" : "are"} excluded from the ranking.` : "All counties have a reportable rate in this selection."}</p>`;
+        <p>For ${year} ${system}, the realized-access proxy spans <strong>${percent(range)} percentage points</strong> across reporting counties, from ${percent(d3.min(available, d => d.value))}% to ${percent(d3.max(available, d => d.value))}%. This shows that the share of eligible women who reached at least one service differs substantially by county.</p>
+        <p>The three highest reported access-proxy values are ${names(high)}. The three lowest are ${names(low)}. These are observed rates, not performance grades; differences may reflect need, affordability, provider capacity, enrollment, referral pathways, reporting, or other factors.</p>
+        <p>${missing.length ? `${missing.map(d => d.county_name).join(", ")} ${missing.length === 1 ? "has" : "have"} no reportable access-proxy rate in this selection and ${missing.length === 1 ? "is" : "are"} excluded from the ranking.` : "All counties have a reportable access-proxy rate in this selection."}</p>`;
     }
 
     function updateDashboard() {
